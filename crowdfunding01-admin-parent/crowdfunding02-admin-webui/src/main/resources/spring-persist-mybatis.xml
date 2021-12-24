@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!--加载外部属性文件-->
+    <context:property-placeholder location="classpath:jdbc.properties"/>
+
+    <!--配置数据源-->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" destroy-method="close" init-method="init">
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="driverClassName" value="${jdbc.driver}"/>
+    </bean>
+
+    <!--配置SqlSessionFactory（设置mybatis配置文件的路径、mapper.xml文件的路径、注入数据源）-->
+    <bean id="sqlSessionFactoryBean" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="configLocation" value="classpath:mybatis/mybatis-config.xml"/>
+        <!--  MyBatis通过xml文件动态创建接口实现类    -->
+        <property name="mapperLocations" value="classpath:mybatis/mapper/*.xml"/>
+        <property name="dataSource" ref="dataSource"/>
+        <!--    配置插件    -->
+        <property name="plugins">
+            <array>
+                <!-- 配置PageHelper插件 -->
+                <bean class="com.github.pagehelper.PageHelper">
+                    <property name="properties">
+                        <props>
+                            <!--配置数据库方言-->
+                            <prop key="dialect">mysql</prop>
+                            <!-- 配置页码的合理化修正，在1~ 总页数之间修正页码-->
+                            <prop key="reasonable">true</prop>
+                        </props>
+                    </property>
+                </bean>
+            </array>
+        </property>
+    </bean>
+
+    <!--配置与mapper.xml对应的mapper接口的包路径-->
+    <!--  扫描mapper接口的包，放到IOC容器里，就可以Autowired了  -->
+    <!--  用之前的context:component-scan就扫不出来，因为这个对象是MyBatis动态创建出来的  -->
+    <bean id="mapperScannerConfigurer" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.joe.crowd.mapper"/>
+    </bean>
+
+
+</beans>
